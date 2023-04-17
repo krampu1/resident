@@ -17,37 +17,14 @@ New09 PROC
     jne @@next ; if pres button on numpud '-'
         mov word ptr cs:[offset drowable], 0 ; drowable = false
 
-        ;
-        in al, 61h      ; blink keybourd controller (61h - keybourd controller)
-        or al, 80h      ; 80h = 1000 0000
-        out 61h, al
-        and al, not 80h ; not 80h = 0111 1111
-        out 61h, al
-        mov al, 20h     ; interapt end
-        out 20h, al
-
-        pop ax ; return reg
-        
-        iret
+        jmp @@end_interapt
 
     @@next:
     cmp al, KEY_NUM_PLUS
     jne @@end ; else if pres button on numpud '+'
         mov word ptr cs:[offset drowable], 0101h ; drowable = true
-
-        ;
-        in al, 61h      ; blink keybourd controller (61h - keybourd controller)
-        or al, 80h      ; 80h = 1000 0000
-        out 61h, al
-        and al, not 80h ; not 80h = 0111 1111
-        out 61h, al
-        mov al, 20h     ; interapt end
-        out 20h, al
-
-        pop ax ; return reg
-
-        iret
-        ;
+        
+        jmp @@end_interapt
 
     @@end:
 
@@ -56,6 +33,19 @@ New09 PROC
     db 0eah     ; jmp to original 09
 old9ofs: dw 0
 old9seg: dw 0
+
+@@end_interapt:
+    in al, 61h      ; blink keybourd controller (61h - keybourd controller)
+    or al, 80h      ; 80h = 1000 0000
+    out 61h, al
+    and al, not 80h ; not 80h = 0111 1111
+    out 61h, al
+    mov al, 20h     ; interapt end
+    out 20h, al
+
+    pop ax ; return reg
+
+    iret
 New09 ENDP
 
 New08 PROC
