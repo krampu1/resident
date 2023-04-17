@@ -200,7 +200,8 @@ drow_all_frame PROC
     mov ah, 5eh        ;set write color
 
     call drow_first_line
-
+    
+    ; the order of registers in memory must be equal to the order of calls
     mov bx, 'SS'       ; save name to reg
     call drow_reg      ; write reg to videomem
 
