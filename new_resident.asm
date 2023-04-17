@@ -4,8 +4,8 @@
 org 100h
 locals @@
 
-key_num_mines equ 74
-key_num_plus  equ 78
+KEY_NUM_MINUS equ 74
+KEY_NUM_PLUS  equ 78
 
 Start: jmp Main
 
@@ -13,7 +13,7 @@ New09 PROC
     push ax ; save reg
 
     in al, 60h
-    cmp al, key_num_mines
+    cmp al, KEY_NUM_MINUS
     jne @@next ; if pres button on numpud '-'
         mov word ptr cs:[offset drowable], 0 ; drowable = false
 
@@ -31,7 +31,7 @@ New09 PROC
         iret
 
     @@next:
-    cmp al, key_num_plus
+    cmp al, KEY_NUM_PLUS
     jne @@end ; else if pres button on numpud '+'
         mov word ptr cs:[offset drowable], 0101h ; drowable = true
 
