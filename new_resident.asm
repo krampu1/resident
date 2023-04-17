@@ -201,7 +201,8 @@ drow_all_frame PROC
 
     call drow_first_line
     
-    ; the order of registers in memory must be equal to the order of calls
+    ; the number of the following calls must correspond to the number of registers(word) that was pushed to the stack
+    ; before each call, you should make a mov in bx of the register names, in the sequence in which they were pushed
     mov bx, 'SS'       ; save name to reg
     call drow_reg      ; write reg to videomem
 
