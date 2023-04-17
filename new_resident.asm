@@ -263,27 +263,27 @@ Main:
     mov bx, 8d * 4d         ; bx = ptr to get  int 08 jmp addres
     mov di, offset old8ofs  ; di = ptr to save int 08 jmp addres
 
-    mov ax, ds:[bx]         ; save int 08 offset
+    mov ax, [bx]         ; save int 08 offset
     stosw
 
-    mov ax, ds:[bx + 2]     ; save int 08 segment
+    mov ax, [bx + 2]     ; save int 08 segment
     stosw
 
-    mov ds:[bx], offset New08 ; vrite to int 08 jmp, new 08 offset and new 08 segment
-    mov ds:[bx + 2], cs
+    mov [bx], offset New08 ; vrite to int 08 jmp, new 08 offset and new 08 segment
+    mov [bx + 2], cs
 
 
     mov bx, 9d * 4d          ; bx = ptr to get  int 09 jmp addres
     mov di, offset old9ofs   ; di = ptr to save int 09 jmp addres
 
-    mov ax, ds:[bx]          ; save int 09 offset
+    mov ax, [bx]          ; save int 09 offset
     stosw
 
-    mov ax, ds:[bx + 2]      ; save int 09 segment
+    mov ax, [bx + 2]      ; save int 09 segment
     stosw
 
-    mov ds:[bx], offset New09 ; vrite to int 09 jmp, new 09 offset and new 09 segment
-    mov ds:[bx + 2], cs
+    mov [bx], offset New09 ; vrite to int 09 jmp, new 09 offset and new 09 segment
+    mov [bx + 2], cs
     sti
 
     mov dx, offset ProgramEnd  ; calc how mach segment save
