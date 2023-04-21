@@ -4,8 +4,20 @@
 org 100h
 locals @@
 
-KEY_NUM_MINUS equ 74
-KEY_NUM_PLUS  equ 78
+KEY_NUM_MINUS       equ 74
+KEY_NUM_PLUS        equ 78
+COUNT_OF_DIGIT      equ 10
+COUNT_MIDDLE_SIMBOL equ 7
+NEXT_LINE_OFFSET    equ 71 * 2 ; 9 символов в строке занимает рамка, всево в строке 80 символов, 80 - 9 = 71
+                               ; * 2 т.к. 1 символ занимает 2 байта(сам символ и его цвет)
+UP_LEFT_SIMBOL          equ '/'
+UP_RIGHT_SIMBOL         equ '\'
+DOWN_LEFT_SIMBOL        equ '\'
+DOWN_RIGHT_SIMBOL       equ '/'
+VERTICAL_LEFT_SIMBOL    equ '|'
+VERTICAL_RIGHT_SIMBOL   equ '|'
+HORIZONTAL_UP_SIMBOL    equ '-'
+HORIZONTAL_DOWN_SIMBOL  equ '-'
 
 Start: jmp Main
 
@@ -77,17 +89,18 @@ write_byte PROC
 
     shl bx, 4            ; 0012 -> 0120
     shr bl, 4            ; 0120 -> 0102
-    cmp bl, 10
-    jl @@digit_l         ; if ! bl < 10
-        add bl, 'a' - 10 ; bl = bl + 'a' - 10
+    
+    cmp bl, COUNT_OF_DIGIT
+    jl @@digit_l         ; if bl >= COUNT_OF_DIGIT
+        add bl, 'a' - COUNT_OF_DIGIT ; bl = bl + 'a' - COUNT_OF_DIGIT
         jmp @@end1
     @@digit_l:           ; else
         add bl, '0'      ; bl += '0'
     @@end1:
 
-    cmp bh, 10
-    jl @@digit_h         ; if ! bh < 10
-        add bh, 'a' - 10 ; bh = bh + 'a' - 10
+    cmp bh, COUNT_OF_DIGIT
+    jl @@digit_h         ; if bh >= 10
+        add bh, 'a' - COUNT_OF_DIGIT ; bh = bh + 'a' - COUNT_OF_DIGIT
         jmp @@end2
     @@digit_h:           ; else
         add bh, '0'      ; bh += '0'
@@ -103,16 +116,16 @@ write_byte ENDP
 
 ; destroy ax, di += 8
 ; need di = first symbol in line
-; write to buf '|' + name of reg + '=' + reg data + '|' 
+; write to buf '|' + name of reg + '=' + reg data(bigending) + '|' 
 ; need bx = 2 symbol = name of reg, si = ptr to data reg (word)
-drow_reg PROC
-    mov al, '|'   ; write first symbol of line in frame
+dump_reg PROC
+    mov al, VERTICAL_LEFT_SIMBOL   ; write first symbol of line in frame
     stosw
 
     mov al, bh    ; get first simbol of name reg
-    stosw 
+    stosw         ; drow first simbol
     mov al, bl    ; get second simbol of name reg
-    stosw
+    stosw         ; drow second simbol
 
     mov al, '='           ; write '='
     stosw
@@ -120,45 +133,30 @@ drow_reg PROC
     call write_byte       ; write first pice of reg
     call write_byte       ; write second pice of reg
 
-    ; swap because out in bigending, to out in littleending
-    ; swap simbols in buffer ABCD -> CBAD
-    ; buffer = [A, CL, B, CL, C, CL, D, CL] di, di after buffer, CL - color
-    ;        di -8 -7  -6 -5  -4 -3  -2 -1  -0
-    mov bl, es:[di - 8]   ; save A from ABCD
-    mov bh, es:[di - 4]   ; save C from ABCD
-    mov es:[di - 4], bl   ; write save A to C,       ABCD -> ABAD
-    mov es:[di - 8], bh   ; write save C to first A, ABAD -> CBAD
-
-    ; swap simbols in buffer CBAD -> CDAB
-    mov bl, es:[di - 6]   ; save B from CBAD
-    mov bh, es:[di - 2]   ; save D from CBAD
-    mov es:[di - 2], bl   ; write save B to D,       CBAD -> CBAB
-    mov es:[di - 6], bh   ; write save D to first B, CBAB -> CDAB
-
-    mov al, '|'   ; write last symbol of line in farme
+    mov al, VERTICAL_RIGHT_SIMBOL   ; write last symbol of line in farme
     stosw
 
-    add di, 71 * 2        ; 71 * 2 - 7 symbol writen and 80 in line 9 + 71 = 80 and *2 - 2 byte in 1 symbol(color and char)
+    add di, NEXT_LINE_OFFSET
     ret
-drow_reg ENDP
+dump_reg ENDP
 
 ; write first line of frame in videomem
 ; need di = first symbol in line
 ; destroy al, cx
 ; di = first symbol in next line, cx = 0
 drow_first_line PROC
-    mov al, '/'          ; drow first symbol of first line in frame
+    mov al, UP_LEFT_SIMBOL      ; drow first symbol of first line in frame
     stosw
 
-    mov cx, 7            ; count of middle simbol in first line in frame
-    mov al, '-'          ; drow middle simbol of first line in frame
+    mov cx, COUNT_MIDDLE_SIMBOL ; count of middle simbol in first line in frame
+    mov al, HORIZONTAL_UP_SIMBOL   ; drow middle simbol of first line in frame
     rep
     stosw
 
-    mov al, '\'          ; drow last symbol of first line in farme
+    mov al, UP_RIGHT_SIMBOL     ; drow last symbol of first line in farme
     stosw
 
-    add di, 71 * 2       ; 71 * 2 - 7 symbol writen and 80 in line 9 + 71 = 80 and *2 - 2 byte in 1 symbol(color and char)
+    add di, NEXT_LINE_OFFSET
     ret
 drow_first_line ENDP
 
@@ -167,18 +165,18 @@ drow_first_line ENDP
 ; destroy al, cx
 ; out di = first symbol in next line, cx = 0
 drow_last_line PROC
-    mov al, '\'          ; drow first symbol of last line in frame
+    mov al, DOWN_LEFT_SIMBOL    ; drow first symbol of last line in frame
     stosw
 
-    mov cx, 7            ; count of middle simbol in last line in frame
-    mov al, '-'          ; drow middle simbol of last line in frame
+    mov cx, COUNT_MIDDLE_SIMBOL ; count of middle simbol in last line in frame
+    mov al, HORIZONTAL_DOWN_SIMBOL   ; drow middle simbol of last line in frame
     rep
     stosw
 
-    mov al, '/'          ; drow last symbol of last line in farme
+    mov al, DOWN_RIGHT_SIMBOL   ; drow last symbol of last line in farme
     stosw
 
-    add di, 71 * 2       ; 71 * 2 - 7 symbol writen and 80 in line 9 + 71 = 80 and *2 - 2 byte in 1 symbol(color and char)
+    add di, NEXT_LINE_OFFSET
     ret
 drow_last_line ENDP
 
@@ -197,46 +195,47 @@ drow_all_frame PROC
     mov es, bx         ; set es to videomem
     xor di, di         ; set ptr to begin of videomem
 
-    mov ah, 5eh        ;set write color
+    mov ah, 5eh        ;set dump color
 
-    call drow_first_line
+    call drow_first_line  ; drow first line of frame
     
-    ; the number of the following calls must correspond to the number of registers(word) that were pushed to the stack.
-    ; Before each call, you should make a mov in bx of the register names, in the sequence in which they were pushed.
+    ; Далее нужно сделать столькоже вызовов функции dump_reg, сколько регистров вы добавили в стек.
+    ; Регистры будут выведены в последоваельности в которой вы их добавили в стек.
+    ; Перед каждым вызовом функции dump_reg, нужно в регистрок bx положить название соответствующего регистра который будет выведен.
     mov bx, 'SS'       ; save name to reg
-    call drow_reg      ; write reg to videomem
+    call dump_reg      ; write reg to buf
 
     mov bx, 'DS'
-    call drow_reg
+    call dump_reg
 
     mov bx, 'DI'
-    call drow_reg
+    call dump_reg
 
     mov bx, 'SI'
-    call drow_reg
+    call dump_reg
 
     mov bx, 'BP'
-    call drow_reg
+    call dump_reg
 
     mov bx, 'SP'
-    call drow_reg
+    call dump_reg
 
     mov bx, 'BX'
-    call drow_reg
+    call dump_reg
 
     mov bx, 'DX'
-    call drow_reg
+    call dump_reg
 
     mov bx, 'CX'
-    call drow_reg
+    call dump_reg
 
     mov bx, 'ES'
-    call drow_reg
+    call dump_reg
 
     mov bx, 'AX'
-    call drow_reg
+    call dump_reg
 
-    call drow_last_line
+    call drow_last_line ; drow last line of frame
 
     ret
 drow_all_frame ENDP
